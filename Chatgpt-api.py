@@ -3,7 +3,7 @@ import codecs
 import os
 
 # enter an api key, obtain from openai.com after logging in, remember to save it
-openai.api_key = "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"
+openai.api_key = ""
 
 
 # functions
