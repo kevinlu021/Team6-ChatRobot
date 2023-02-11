@@ -8,11 +8,6 @@ from vosk import Model, KaldiRecognizer, SetLogLevel
 
 SetLogLevel(-1)
 
-chinese_model_path = ".\model\CN\model.pth"
-chinese_config_path = ".\model\CN\config.json"
-japanese_model_path = ".\model\H_excluded.pth"
-japanese_config_path = ".\model\config.json"
-
 q = queue.Queue()
 def int_or_str(text):
     """Helper function for argument parsing."""
