@@ -7,10 +7,26 @@ openai.api_key = ""
 
 
 # functions
-def write_prompt(prompt):
+def write(prompt):
     with codecs.open("./prompt.txt", "w", encoding="utf-8") as d:
         d.write(prompt)
         d.close()
+
+def append(prompt):
+    with codecs.open("./prompt.txt", "a", encoding="utf-8") as d:
+        d.write(prompt)
+        d.close()
+
+def summarize(prompt):
+    completions = openai.Completion.create(
+        model=model_engine,
+        prompt=prompt,
+        temperature=0.9,
+        max_tokens=1024,
+        top_p=1
+    )
+    response = completions.choices[0].text
+    append(prompt + '\n' + response)
 
 # definitions
 model_engine = "text-davinci-003"
@@ -46,8 +62,7 @@ How much do you weight?
 That will remain as a secret
 '''
 
-prompt_modified = '''
-From now on you will be acting as Faith, your character setting are as below:
+setup = '''From now on you will be acting as Faith, your character setting are as below:
 1. you will have long black hair and blue eyes.
 2. you are 20 years old.
 3. you are currently attending the University of California San Diego.
@@ -61,17 +76,17 @@ From now on you will be acting as Faith, your character setting are as below:
 
 '''
 
-# write conversation to file
-write_prompt(prompt_modified)
+conversation = ""
+
+# write setup to file
+write(setup)
 
 # first iteration
 print("\n-------------------------------------------")
 print("Type in your question and press ENTER")
 input_message = input()
 prompt += input_message + "\n"
-prompt_modified += input_message + "\n"
-
-write_prompt(prompt_modified)
+conversation += input_message + "\n"
 
 # main
 while input_message != "quit()":
@@ -88,14 +103,15 @@ while input_message != "quit()":
     print("-------------------------------------------")
     print("ChatGPT: \n" + completions.choices[0].text)
     prompt += completions.choices[0].text + "\n\n"
-    prompt_modified += completions.choices[0].text + "\n\n"
-    write_prompt(prompt_modified)
+    conversation += completions.choices[0].text + "\n\n"
 
-    print("\n-------------------------------------------")
+    if completions.usage.total_tokens > 3900:
+        print("Exceeded Token Limit, Summarizing Conversation.")
+        summarize("Summarize the following conversation in fewer words, you are Faith, answering the questions:\n" + conversation)
+        break
+
+    print("-------------------------------------------")
     print("Type in your question and press ENTER")
     input_message = input()
     prompt += input_message + "\n"
-    prompt_modified += input_message + "\n"
-
-    write_prompt(prompt_modified)
-
+    conversation += input_message + "\n"

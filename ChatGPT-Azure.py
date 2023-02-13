@@ -18,17 +18,7 @@ def generateSound(text):
 
     speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
 
-    speech_synthesis_result = speech_synthesizer.speak_text_async(text).get()
-
-    if speech_synthesis_result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-        print("Speech synthesized for text [{}]".format(text))
-    elif speech_synthesis_result.reason == speechsdk.ResultReason.Canceled:
-        cancellation_details = speech_synthesis_result.cancellation_details
-        print("Speech synthesis canceled: {}".format(cancellation_details.reason))
-        if cancellation_details.reason == speechsdk.CancellationReason.Error:
-            if cancellation_details.error_details:
-                print("Error details: {}".format(cancellation_details.error_details))
-                print("Did you set the speech resource key and region values?")
+    speech_synthesizer.speak_text_async(text).get()
 
 
 SetLogLevel(-1)
@@ -115,19 +105,35 @@ def voice_input(language):
 
 
 # enter an api key, obtain from openai.com after logging in, remember to save it
-openai.api_key = "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"
+openai.api_key = "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"
 
-def write_prompt(prompt):
+# functions
+def write(prompt):
     with codecs.open("./prompt.txt", "w", encoding="utf-8") as d:
         d.write(prompt)
         d.close()
+
+def append(prompt):
+    with codecs.open("./prompt.txt", "a", encoding="utf-8") as d:
+        d.write(prompt)
+        d.close()
+
+def summarize(prompt):
+    completions = openai.Completion.create(
+        model=model_engine,
+        prompt=prompt,
+        temperature=0.9,
+        max_tokens=1024,
+        top_p=1
+    )
+    response = completions.choices[0].text
+    append(response)
 
 # definitions
 model_engine = "text-davinci-003"
 
 # modify the character setting as you want
-prompt = '''
-From now on you will be acting as Faith, your character setting are as below:
+prompt = '''From now on you will be acting as Faith, your character setting are as below:
 1. you will have long black hair and blue eyes.
 2. you are 20 years old.
 3. you are currently attending the University of California San Diego.
@@ -156,8 +162,7 @@ How much do you weight?
 That will remain as a secret
 '''
 
-prompt_modified = '''
-From now on you will be acting as Faith, your character setting are as below:
+setup = '''From now on you will be acting as Faith, your character setting are as below:
 1. you will have long black hair and blue eyes.
 2. you are 20 years old.
 3. you are currently attending the University of California San Diego.
@@ -171,18 +176,17 @@ From now on you will be acting as Faith, your character setting are as below:
 
 '''
 
+conversation = ""
+
 # write conversation to file
-write_prompt(prompt_modified)
+write(setup)
 
 # first iteration
 print("\n-------------------------------------------")
-print("Type in your question and press ENTER")
-#input_message = input()
-input_message = voice_input('en-us')
+print("Ask your question and press ENTER")
+input_message = voice_input("en-us")
 prompt += input_message + "\n"
-prompt_modified += input_message + "\n"
-
-write_prompt(prompt_modified)
+conversation += input_message + "\n"
 
 # main
 while input_message != "quit()":
@@ -200,13 +204,15 @@ while input_message != "quit()":
     print("ChatGPT: \n" + completions.choices[0].text)
     generateSound(completions.choices[0].text)
     prompt += completions.choices[0].text + "\n\n"
-    prompt_modified += completions.choices[0].text + "\n\n"
-    write_prompt(prompt_modified)
+    conversation += completions.choices[0].text + "\n\n"
+    
+    if completions.usage.total_tokens > 3900:
+        print("Exceeded Token Limit, Summarizing Conversation.")
+        summarize("Summarize the following conversation in fewer words, you are Faith, answering the questions:\n" + conversation)
+        break
 
     print("\n-------------------------------------------")
-    print("Type in your question and press ENTER")
+    print("Ask your question and press ENTER")
     input_message = voice_input('en-us')
     prompt += input_message + "\n"
-    prompt_modified += input_message + "\n"
-
-    write_prompt(prompt_modified)
+    conversation += input_message + "\n"
