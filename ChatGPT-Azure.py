@@ -105,7 +105,7 @@ def voice_input(language):
 
 
 # enter an api key, obtain from openai.com after logging in, remember to save it
-openai.api_key = "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"
+openai.api_key = ""
 
 # functions
 def write(prompt):
